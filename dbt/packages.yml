@@ -1,0 +1,8 @@
+# Installed by `make dbt ARGS="deps"` into dbt/dbt_packages (git-ignored).
+packages:
+  # Surrogate keys and multi-column tests
+  - package: dbt-labs/dbt_utils
+    version: [">=1.3.0", "<2.0.0"]
+  # Range and distribution tests, e.g. amount_kobo must be at least 1
+  - package: metaplane/dbt_expectations
+    version: [">=0.10.0", "<0.11.0"]

@@ -1,0 +1,15 @@
+# Where dbt connects. No password or port lives here: every value comes from .env,
+# which `make dbt` loads first. That is why we always run dbt through make.
+
+owopay:
+  target: dw
+  outputs:
+    dw:
+      type: postgres
+      host: "{{ env_var('PG_HOST', 'localhost') }}"
+      port: "{{ env_var('PG_PORT', '5432') | as_number }}"
+      user: "{{ env_var('PG_USER', 'owopay') }}"
+      password: "{{ env_var('PG_PASSWORD', 'owopay') }}"
+      dbname: "{{ env_var('DW_DB', 'dw') }}"
+      schema: analytics
+      threads: 4

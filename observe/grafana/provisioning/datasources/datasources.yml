@@ -1,0 +1,16 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    url: http://prometheus:9090
+    isDefault: true
+  - name: Warehouse
+    type: postgres
+    url: postgres:5432
+    user: owopay
+    secureJsonData:
+      password: owopay
+    jsonData:
+      database: dw
+      sslmode: disable

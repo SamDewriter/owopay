@@ -1,0 +1,62 @@
+# The star's tests: every key is unique where it is defined and present where it is used,
+# and every key in the fact points at a real row in its dimension.
+
+models:
+  - name: dim_date
+    columns:
+      - name: date_key
+        data_tests: [unique, not_null]
+
+  - name: dim_customer
+    description: One row per customer per version (Type 2)
+    columns:
+      - name: customer_key
+        data_tests: [unique, not_null]
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:            # two versions starting at the same moment
+          arguments:
+            combination_of_columns: [customer_id, valid_from]
+
+  - name: dim_merchant
+    columns:
+      - name: merchant_key
+        data_tests: [unique, not_null]
+
+  - name: dim_agent
+    columns:
+      - name: agent_key
+        data_tests: [unique, not_null]
+
+  - name: fct_transactions
+    description: "Grain: one row per transaction, latest status"
+    columns:
+      - name: txn_id
+        data_tests: [unique, not_null]
+      - name: date_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_key
+      - name: customer_key
+        data_tests:
+          - not_null                                       # a transaction that matched no customer version
+          - relationships:
+              arguments:
+                to: ref('dim_customer')
+                field: customer_key
+      - name: merchant_key                                 # empty for transfers; checked where present
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_merchant')
+                field: merchant_key
+      - name: agent_key                                    # empty unless channel = agent
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_agent')
+                field: agent_key
+      - name: amount_kobo
+        data_tests: [not_null]

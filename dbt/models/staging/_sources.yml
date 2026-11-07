@@ -1,0 +1,19 @@
+# The raw tables the extract script loads. Declared once here; every model reads them through
+# source('raw', '<table>'), so dbt knows the lineage from raw to every mart.
+
+sources:
+  - name: raw
+    schema: raw
+    description: Copies of OwoPay's OLTP tables, loaded by ingestion/batch/extract_to_dw.py
+    config:
+      loaded_at_field: _extracted_at
+      freshness:
+        warn_after: {count: 26, period: hour}
+        error_after: {count: 50, period: hour}
+    tables:
+      - name: transactions
+        description: One row per transaction, loaded one Lagos day at a time (_wat_day)
+      - name: customers
+        description: Every customer, copied whole on each run; includes personal data
+      - name: merchants
+      - name: agents

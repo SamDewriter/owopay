@@ -1,0 +1,12 @@
+# OwoPay course platform (ADR-000). The services live in compose/stack.yml.
+# This include makes every `docker compose` command, with or without the Makefile, read the
+# image pins in versions.env and your settings in .env.
+#   make up PROFILE=core | orchestration | compute | serving | observe | all
+
+name: owopay
+
+include:
+  - path: compose/stack.yml
+    env_file:
+      - versions.env
+      - .env

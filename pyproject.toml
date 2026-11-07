@@ -1,0 +1,48 @@
+[project]
+name = "owopay-platform"
+version = "0.4.0"
+description = "The OwoPay data platform built over Weeks 4-12 of the data engineering programme"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "psycopg[binary]>=3.2,<4",
+    "confluent-kafka>=2.6,<3",
+    "boto3>=1.35,<2",
+    "pandas>=2.2,<3",
+    "dbt-core==1.12.*",
+    "dbt-postgres>=1.9,<2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "ruff>=0.8",
+    "duckdb>=1.1,<2",
+    "jupyterlab>=4",
+]
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["generator"]
+
+[tool.setuptools.package-data]
+owopay = ["schema.sql"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = ["notebooks"]
+
+[tool.ruff.format]
+quote-style = "single"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["owopay", "common"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

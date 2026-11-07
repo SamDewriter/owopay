@@ -1,0 +1,25 @@
+{
+  "name": "OwoPay platform",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "16gb",
+    "storage": "32gb"
+  },
+  "forwardPorts": [8080, 8082, 8888, 8333, 5432, 9092, 3000],
+  "portsAttributes": {
+    "8080": {"label": "Airflow"},
+    "8082": {"label": "Redpanda Console"},
+    "8888": {"label": "SeaweedFS browser"},
+    "3000": {"label": "Metabase"}
+  },
+  "postCreateCommand": "make setup",
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python", "ms-toolsai.jupyter", "charliermarsh.ruff", "innoverio.vscode-dbt-power-user"]
+    }
+  }
+}

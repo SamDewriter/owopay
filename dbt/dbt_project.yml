@@ -1,0 +1,24 @@
+# The OwoPay warehouse model. Run it through make from the repo root: make dbt ARGS="build"
+# Folders become schemas in dw: models/staging -> staging, models/marts -> marts, snapshots -> snapshots.
+
+name: owopay
+version: "1.0.0"
+require-dbt-version: [">=1.12.0", "<2.0.0"]
+profile: owopay
+
+model-paths: ["models"]
+snapshot-paths: ["snapshots"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  owopay:
+    # Staging: one view per source table, cheap to rebuild, never queried by dashboards.
+    staging:
+      +schema: staging
+      +materialized: view
+    # Marts: real tables, because this is what people query.
+    marts:
+      +schema: marts
+      +materialized: table

@@ -1,0 +1,11 @@
+{
+  "identities": [
+    {
+      "name": "owopay",
+      "credentials": [
+        {"accessKey": "owopay", "secretKey": "owopay-dev-secret"}
+      ],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    }
+  ]
+}

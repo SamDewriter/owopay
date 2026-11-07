@@ -1,0 +1,15 @@
+models:
+  - name: mart_daily_txn_summary
+    description: "Finance's daily view. Grain: one row per Lagos day, channel and status"
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:            # the grain, enforced
+          arguments:
+            combination_of_columns: [wat_day, channel, status]
+    columns:
+      - name: wat_day
+        data_tests: [not_null]
+      - name: txns
+        data_tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              arguments:
+                min_value: 1

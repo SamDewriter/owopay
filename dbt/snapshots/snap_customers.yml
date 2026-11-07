@@ -1,0 +1,16 @@
+# snap_customers: every version of every customer, kept forever (Type 2 history).
+# Each `dbt build` (or `dbt snapshot`) compares stg_customers with the latest version here.
+# If a customer's updated_at moved, dbt closes the old row (dbt_valid_to) and opens a new one.
+# The timestamp strategy dates each version by when the source says it changed, not by when dbt ran.
+# History starts the first time this runs: changes made before then are not recoverable.
+
+snapshots:
+  - name: snap_customers
+    relation: ref('stg_customers')
+    description: Every version of every customer since snapshots began
+    config:
+      schema: snapshots
+      unique_key: customer_id
+      strategy: timestamp
+      updated_at: updated_at
+      hard_deletes: invalidate

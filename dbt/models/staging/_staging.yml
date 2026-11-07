@@ -1,0 +1,51 @@
+# Tests are the contract with the source. Each one names what it would catch.
+# The allowed values come from docs/schema.md; a new channel or status tomorrow fails the build on purpose.
+
+models:
+  - name: stg_transactions
+    description: One row per transaction, renamed and typed
+    columns:
+      - name: txn_id
+        data_tests: [unique, not_null]                       # a duplicated or missing transaction
+      - name: customer_id
+        data_tests: [not_null]                               # a transaction with nobody behind it
+      - name: channel
+        data_tests:
+          - accepted_values:                                 # a channel nobody told us about
+              arguments:
+                values: [app, ussd, pos, agent, web]
+      - name: status
+        data_tests:
+          - accepted_values:                                 # a new status, e.g. "reversed"
+              arguments:
+                values: [settled, failed, pending]
+      - name: amount_kobo
+        data_tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:   # zero or negative money
+              arguments:
+                min_value: 1
+      - name: wat_day
+        data_tests: [not_null]
+
+  - name: stg_customers
+    description: One row per customer, current values, no personal data
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+      - name: kyc_tier
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3]
+                quote: false
+
+  - name: stg_merchants
+    columns:
+      - name: merchant_id
+        data_tests: [unique, not_null]
+
+  - name: stg_agents
+    columns:
+      - name: agent_id
+        data_tests: [unique, not_null]

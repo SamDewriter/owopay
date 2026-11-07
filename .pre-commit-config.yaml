@@ -1,0 +1,20 @@
+# pip install pre-commit && pre-commit install   (required from Week 8)
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.6
+    hooks:
+      - id: ruff
+      - id: ruff-format
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+      - id: detect-private-key
+      - id: forbid-new-submodules
+  - repo: local
+    hooks:
+      - id: no-dotenv
+        name: .env must never be committed
+        entry: .env must never be committed
+        language: fail
+        files: ^\.env$
