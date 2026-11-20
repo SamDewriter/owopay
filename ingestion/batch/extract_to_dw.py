@@ -12,6 +12,8 @@ models it there.
   and only a reload picks up its final status.
 - customers, merchants and agents are small, so they are copied whole on every run. Keeping their
   history is the dbt snapshot's job, not this script's.
+- If --day itself has no transactions in owopay, it fails and rolls back. An empty load that "succeeds"
+  is the worst failure: the dashboard shows zero and nobody is told. --allow-empty overrides it.
 
 Week 6 runs this unchanged as the first task of the owopay_daily DAG.
 """
@@ -117,6 +119,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description='Copy OwoPay Lagos days from owopay into dw.raw')
     parser.add_argument('--day', required=True, type=dt.date.fromisoformat, help='Lagos business day, YYYY-MM-DD')
     parser.add_argument('--lookback', type=int, default=2, help='also reload this many days before --day')
+    parser.add_argument('--allow-empty', action='store_true', help='succeed even if --day has no transactions')
     args = parser.parse_args(argv)
 
     days = [args.day - dt.timedelta(days=n) for n in range(args.lookback, -1, -1)]
@@ -133,6 +136,9 @@ def main(argv=None):
             replaced, loaded = extract_day(src, dst, day, loaded_at)
             note = ' (replaced %s)' % format(replaced, ',') if replaced else ''
             print('[extract] raw.transactions %s %10s rows%s' % (day, format(loaded, ','), note))
+        if not loaded and not args.allow_empty:
+            # Raising inside the `with` rolls back every day of this run, so raw stays as it was.
+            sys.exit('[extract] owopay has no transactions for %s yet: nothing committed' % args.day)
 
 
 if __name__ == '__main__':

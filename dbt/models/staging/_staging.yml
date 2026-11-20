@@ -25,6 +25,8 @@ models:
           - dbt_expectations.expect_column_values_to_be_between:   # zero or negative money
               arguments:
                 min_value: 1
+      - name: created_at
+        data_tests: [not_null, not_in_the_future]            # a wrong clock upstream (tests/generic/)
       - name: wat_day
         data_tests: [not_null]
 

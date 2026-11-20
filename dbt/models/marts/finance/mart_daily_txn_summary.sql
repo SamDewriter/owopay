@@ -12,7 +12,7 @@ select
     f.status,
     count(*)                    as txns,
     sum(f.amount_kobo)          as amount_kobo,
-    sum(f.amount_kobo) / 100.0  as amount_naira     -- exact: numeric division, not a float
+    {{ kobo_to_naira('sum(f.amount_kobo)') }}  as amount_naira   -- exact numeric, see macros/kobo_to_naira.sql
 from {{ ref('fct_transactions') }} f
 join {{ ref('dim_date') }} d on d.date_key = f.date_key
 group by 1, 2, 3, 4, 5, 6

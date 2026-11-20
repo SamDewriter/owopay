@@ -7,7 +7,7 @@ with days as (
 )
 
 select
-    to_char(date_day, 'YYYYMMDD')::int          as date_key,          -- 20261103
+    {{ date_key('date_day') }}                  as date_key,          -- 20261103, see macros/date_key.sql
     date_day,
     trim(to_char(date_day, 'Day'))              as day_name,
     extract(isodow from date_day)::int          as iso_day_of_week,   -- Monday 1 … Sunday 7

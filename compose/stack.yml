@@ -4,7 +4,10 @@
 # Images come from versions.env; credentials and ports from .env.
 
 x-airflow-common: &airflow-common
-  image: ${AIRFLOW_IMAGE}
+  # The official image plus dbt in its own venv (airflow/Dockerfile). airflow-init builds it on the
+  # first `make up PROFILE=orchestration`; the other Airflow services reuse it, never pull it.
+  image: owopay-airflow:3.3.2
+  pull_policy: never
   profiles: [orchestration]
   user: "${AIRFLOW_UID:-50000}:0"
   environment: &airflow-env
@@ -24,9 +27,24 @@ x-airflow-common: &airflow-common
     OWOPAY_PG_HOST: postgres
     OWOPAY_KAFKA_BOOTSTRAP: redpanda:29092
     OWOPAY_S3_ENDPOINT: http://seaweedfs:8333
+    # owopay_daily runs the laptop's own extract and dbt project, so they get the same settings
+    # names as .env, with the values Postgres has inside the network (host postgres, port 5432).
+    PG_HOST: postgres
+    PG_PORT: "5432"
+    PG_USER: ${PG_USER}
+    PG_PASSWORD: ${PG_PASSWORD}
+    PG_DB: ${PG_DB}
+    DW_DB: ${DW_DB}
+    DBT_SEND_ANONYMOUS_USAGE_STATS: "false"
+    DBT_USE_COLORS: "false"            # plain text in the Airflow log
   volumes:
     - ../airflow/dags:/opt/airflow/dags
     - ../airflow/plugins:/opt/airflow/plugins
+    # The repo code the DAG runs, read-only: Airflow schedules it, the code stays in one place.
+    - ../.env.example:/opt/owopay/.env.example:ro
+    - ../generator:/opt/owopay/generator:ro
+    - ../ingestion:/opt/owopay/ingestion:ro
+    - ../dbt:/opt/owopay/dbt:ro
     - airflow_logs:/opt/airflow/logs
   depends_on: &airflow-depends
     postgres:
@@ -147,6 +165,10 @@ services:
   # ---------------------------------------------------------------- orchestration (3 GB)
   airflow-init:
     <<: *airflow-common
+    build:
+      context: ../airflow
+      args:
+        AIRFLOW_IMAGE: ${AIRFLOW_IMAGE}
     command: ["bash", "-c", "airflow db migrate && airflow version"]
     depends_on:
       postgres:

@@ -16,5 +16,17 @@ make dbt ARGS="docs generate"             # lineage; view with dbt docs serve --
 | `models/marts/core/` | `marts` | the star: `dim_date`, `dim_customer` (Type 2), `dim_merchant`, `dim_agent`, `fct_transactions` |
 | `models/marts/finance/` | `marts` | `mart_daily_txn_summary`, finance's daily view |
 | `tests/` | — | `assert_fct_reconciles_to_raw`: every Lagos day reconciles to the kobo |
+| `tests/generic/` | — | `not_in_the_future`: a test of our own, used from YAML like `unique` |
+| `macros/` | — | `generate_schema_name` (schema names), `date_key` and `kobo_to_naira` (used in models), `reset_warehouse` (run on its own) |
 
-The grain of `fct_transactions` is one row per transaction, in its latest status. Week 6 runs `dbt build` from Airflow and rebuilds the fact with Spark; model names here are a contract, so don't rename them.
+Macros, executed on their own:
+
+```bash
+make dbt ARGS="show --inline \"select {{ kobo_to_naira('12345') }} as naira\""     # 123.45
+make reset-warehouse                     # dry run: what it would drop; CONFIRM=yes drops it
+make dbt ARGS="compile -s fct_transactions"     # the SQL after every macro: dbt/target/compiled/
+```
+
+Preview a big model from its built table (`show --inline "select * from {{ ref('fct_transactions') }}"`), not with `show -s fct_transactions`: that re-runs the model's whole join and every test on it.
+
+The grain of `fct_transactions` is one row per transaction, in its latest status. From Week 6, Airflow's `owopay_daily` runs `dbt build` every morning (`airflow/dags/owopay_daily.py`); model names here are a contract, so don't rename them.

@@ -12,7 +12,7 @@
 
 Every learner leaves knowing what each command does and why each file is shaped the way it is. They have the commands to rebuild it themselves and a lab that extends it.
 
-Week 6 puts the extract and `dbt build` under one Airflow DAG and scales the fact with Spark.
+Week 6 finishes whatever part of dbt the class did not reach, then puts the extract and `dbt build` under one Airflow DAG ([Week 6](../week06/README.md)).
 
 **Status:** part A is built and was rehearsed on the instructor's Mac from an empty stack on 7 November 2026. Every command in part B ran, `dbt build` passed 48 of 48 nodes, and `make check-w5` passed checks 1–5. What remains: commit and push the template (learners need it after class), and the morning-of checklist (A7).
 
@@ -323,7 +323,7 @@ Don't run `make dbt ARGS="deps"` in class. The packages are already installed, a
 **Run:**
 
 ```bash
-make dbt ARGS="build -s staging"     # about 10 s, 19 of 19 green
+make dbt ARGS="build -s staging"     # about 10 s, 21 of 21 green (19 before Week 6 added not_in_the_future)
 make psql DB=dw
 ```
 
@@ -349,7 +349,7 @@ select * from staging.stg_customers limit 3;   -- no name, phone or BVN
 **Run:**
 
 ```bash
-make dbt ARGS="build"      # 48 nodes in about 80 seconds: snapshot, dims, fact, mart, every test
+make dbt ARGS="build"      # 50 nodes (48 before Week 6) in about 80 seconds: snapshot, dims, fact, mart, every test
 make psql DB=dw
 ```
 

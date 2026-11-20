@@ -1,8 +1,8 @@
 # One set of commands in a Codespace and on a laptop. `make help` lists them.
 
 PROFILE ?= core
-DAY ?= 2026-11-03
-ROWS ?= 200000
+DAY ?= 2026-11-07
+ROWS ?= 400000
 CHAOS ?=
 
 PY := .venv/bin/python
@@ -15,7 +15,7 @@ export
 PROFILE_FLAGS := --profile core $(if $(filter all,$(PROFILE)),--profile '*',$(if $(filter-out core,$(PROFILE)),--profile $(PROFILE)))
 
 .DEFAULT_GOAL := help
-.PHONY: help setup up down ps logs psql seed seed-week extract extract-week dbt demo doctor \
+.PHONY: help setup up down ps logs psql seed seed-week extract extract-week dbt reset-warehouse trigger demo doctor \
 	check-w4 check-w5 check-w6 check-w7 check-w8 check-w9 test lint clean
 
 help: ## List the targets
@@ -67,6 +67,13 @@ extract-week: setup ## Copy the seven course days into dw.raw (09 and the six da
 dbt: setup ## Run dbt from the repo root: make dbt ARGS="build -s staging"
 	.venv/bin/dbt $(ARGS) --project-dir dbt --profiles-dir dbt
 
+reset-warehouse: setup ## Drop what dbt built (staging, snapshots, marts): dry run; CONFIRM=yes really drops
+	.venv/bin/dbt run-operation reset_warehouse --args '{dry_run: $(if $(filter yes,$(CONFIRM)),false,true)}' --project-dir dbt --profiles-dir dbt
+
+trigger: .env ## Rerun owopay_daily for one past Lagos day: make trigger DAY=2026-11-10
+	$(COMPOSE) exec airflow-scheduler airflow dags unpause owopay_daily
+	$(COMPOSE) exec airflow-scheduler airflow dags trigger owopay_daily --conf '{"day": "$(DAY)"}'
+
 demo: setup ## Print live counts from Postgres, the topics and the buckets
 	$(PY) scripts/demo.py
 
@@ -79,7 +86,10 @@ check-w4: setup ## Week 4 checkpoints, headless
 check-w5: setup ## Week 5 checkpoints, headless
 	$(PY) scripts/checks/check_w5.py
 
-check-w6 check-w7 check-w8 check-w9:
+check-w6: setup ## Week 6 checkpoints, headless
+	$(PY) scripts/checks/check_w6.py
+
+check-w7 check-w8 check-w9:
 	@echo "$@ arrives with its week." && exit 1
 
 test: setup ## Unit tests (pytest, DuckDB)

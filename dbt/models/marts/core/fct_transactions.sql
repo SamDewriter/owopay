@@ -29,7 +29,7 @@ agents as (
 
 select
     t.txn_id,
-    to_char(t.wat_day, 'YYYYMMDD')::int     as date_key,
+    {{ date_key('t.wat_day') }}             as date_key,      -- the same macro dim_date uses
     c.customer_key,
     m.merchant_key,
     a.agent_key,
