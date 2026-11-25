@@ -2,7 +2,7 @@
 
 The repository the data engineering programme builds on from Week 4 to Week 12. OwoPay is a fictional Nigerian payments company: a million transactions a day on one Postgres, a finance dashboard that times out, a regulator who wants T+1 to the kobo, and a fraud team that wants minutes. Every week ends in a merged pull request on this repo; nothing is thrown away.
 
-The stack and every choice behind it are in [ADR-000](docs/adr/ADR-000-course-stack.md). The source data is described in [docs/schema.md](docs/schema.md). Each week's plan is under [docs/weeks/](docs/weeks/) (start with [Week 5](docs/weeks/week05/README.md)).
+The stack and every choice behind it are in [ADR-000](docs/adr/ADR-000-course-stack.md). The source data is described in [docs/schema.md](docs/schema.md). Each week's plan is under [docs/weeks/](docs/weeks/) ([Week 5](docs/weeks/week05/README.md), [Week 6](docs/weeks/week06/README.md)).
 
 ## Start here
 
@@ -24,6 +24,15 @@ make dbt ARGS="deps" && make dbt ARGS="build"   # staging, snapshot, star schema
 make check-w5
 ```
 
+From Week 6, Airflow runs it every morning at 06:00 Lagos (extract, then `dbt build`):
+
+```bash
+make up PROFILE=orchestration             # first time: builds the Airflow image with dbt inside (needs internet)
+#   open http://localhost:8080 and unpause owopay_daily: it loads yesterday's Lagos day
+make trigger DAY=2026-11-10               # rerun one past day; safe to repeat
+make check-w6
+```
+
 `make help` lists every target. The first `make` that needs Python creates `.venv` and installs the project; the first one that needs settings copies `.env.example` to `.env`.
 
 | Where | URL |
@@ -41,8 +50,8 @@ One profile at a time keeps an 8 GB laptop comfortable; `core` always runs.
 | Profile | Runs | Memory | From |
 | --- | --- | --- | --- |
 | `core` | Postgres, Redpanda + Console, SeaweedFS | 2.75 GB | Week 4 |
-| `orchestration` | Airflow 3 (api-server, scheduler, dag-processor, triggerer) | 3 GB | Week 4 |
-| `compute` | Spark master and worker (Jupyter joins in Week 6, +0.5 GB) | 2 GB | Week 6 |
+| `orchestration` | Airflow 3 (api-server, scheduler, dag-processor, triggerer), with dbt inside | 3 GB | Week 4 (runs the warehouse from Week 6) |
+| `compute` | Spark master and worker (Jupyter joins later, +0.5 GB) | 2 GB | Week 7 or later |
 | `serving` | Metabase | 1 GB | Week 9 |
 | `observe` | Prometheus, Grafana, statsd-exporter | 0.5 GB | Week 12 |
 | `all` | everything | ~9.25 GB | Weeks 9–12 |

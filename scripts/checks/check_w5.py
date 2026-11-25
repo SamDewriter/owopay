@@ -81,6 +81,56 @@ def lab_file(path, must_contain):
     return check
 
 
+def load_audit_matches():
+    expected, bad = set(), []
+    with dw() as conn:
+        for day, rows, kobo in conn.execute(
+            'select _wat_day::text, count(*), sum(amount_kobo)::bigint from raw.transactions group by 1'
+        ):
+            expected.add(('transactions', day))
+            audit = conn.execute(
+                'select row_count, kobo from raw.load_audit where dataset = %s and partition_key = %s',
+                ('transactions', day),
+            ).fetchone()
+            if audit != (rows, kobo):
+                bad.append('%s: audit %s, raw %s' % (day, audit, (rows, kobo)))
+        for table in ('customers', 'merchants', 'agents'):
+            expected.add((table, 'all'))
+            rows = conn.execute('select count(*) from raw.%s' % table).fetchone()[0]
+            audit = conn.execute(
+                "select row_count from raw.load_audit where dataset = %s and partition_key = 'all'", (table,)
+            ).fetchone()
+            if audit != (rows,):
+                bad.append('%s: audit %s, raw %s' % (table, audit, rows))
+        actual = set(conn.execute('select dataset, partition_key from raw.load_audit').fetchall())
+        if actual != expected:
+            bad.append('partitions: audit %s, expected %s' % (sorted(actual), sorted(expected)))
+    if bad:
+        raise RuntimeError('; '.join(bad[:3]))
+    return '%d partitions match raw' % len(expected)
+
+
+def raw_keys_unique():
+    checks = [
+        ('transactions', 'txn_id'),
+        ('customers', 'customer_id'),
+        ('merchants', 'merchant_id'),
+        ('agents', 'agent_id'),
+    ]
+    bad = []
+    with dw() as conn:
+        for table, key in checks:
+            nulls = conn.execute('select count(*) from raw.%s where %s is null' % (table, key)).fetchone()[0]
+            dupes = conn.execute(
+                'select count(*) from (select %s from raw.%s group by 1 having count(*) > 1) d' % (key, table)
+            ).fetchone()[0]
+            if nulls or dupes:
+                bad.append('%s.%s: %s null, %s duplicate' % (table, key, nulls, dupes))
+    if bad:
+        raise RuntimeError('; '.join(bad))
+    return '4 raw keys unique and not null'
+
+
 if __name__ == '__main__':
     c = Checks('make check-w5')
     c.stage('In class')
@@ -92,4 +142,7 @@ if __name__ == '__main__':
     c.stage('Lab')
     c.run('6 ADR-002', lab_file('docs/adr/ADR-002-fact-grain.md', 'Decision'), 'the lab: write ADR-002')
     c.run('6 Data model', lab_file('docs/design/data-model.md', 'grain'), 'the lab: write the data-model doc')
+    c.stage('Optional')
+    c.run('7 Load ledger', load_audit_matches, 'make extract DAY=2026-11-10 and make dbt ARGS="build"')
+    c.run('8 Raw keys', raw_keys_unique, 'remove duplicate or null keys, then make extract DAY=2026-11-10')
     c.finish()
