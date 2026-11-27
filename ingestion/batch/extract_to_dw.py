@@ -55,6 +55,9 @@ create table if not exists raw.transactions (
     _extracted_at timestamptz not null
 );
 create index if not exists transactions_wat_day_idx on raw.transactions (_wat_day);
+
+create unique index if not exists transactions_txn_id_uidx
+on raw.transactions (txn_id);
 """
 
 REFERENCE_TABLES = {
@@ -129,6 +132,7 @@ def main(argv=None):
     # any error before that rolls the whole run back.
     with psycopg.connect(**pg_conninfo()) as src, psycopg.connect(**pg_conninfo(SETTINGS['DW_DB'])) as dst:
         dst.execute(RAW_DDL)
+        dst.execute("select pg_advisory_xact_lock(hashtext('owopay_raw_extract'))")
         for table, names in REFERENCE_TABLES.items():
             n = extract_reference(src, dst, table, names, loaded_at)
             print('[extract] raw.%-13s %10s rows (full copy)' % (table, format(n, ',')))
